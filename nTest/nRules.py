@@ -55,6 +55,11 @@ class nRules:
             print (median_volume)
             print (base_volume)
 
+        try:
+            df['Strike']
+        except:
+            return None
+
         index = (df['Strike'] > self.strike_price_range_min) & (df['Strike'] < self.strike_price_range_max) & (df['Volume'] > base_volume * self.multiple_of_base_volume)
         if Debug:
             print (index)

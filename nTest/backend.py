@@ -19,7 +19,11 @@ class Yahoo_backend:
             return 0
         
     def get_expiration_dates(self):
-        return options.get_expiration_dates(self.symbol)
+        try:
+            return options.get_expiration_dates(self.symbol)
+        except:
+            print ("Backend error")
+            return None
 
     def get_call_option_at_date(self, Date):
         if Date is None:
@@ -40,7 +44,11 @@ class Yahoo_backend:
             return None
 
     def get_sp500_tickers(self):
-        return tickers_sp500()
+        try:
+            return tickers_sp500()
+        except:
+            print ("Backend error")
+            return None
 
 if __name__ == '__main__':
     Symbols = ['AAPL', 'GOOG', 'NVDA', 'AMD']
