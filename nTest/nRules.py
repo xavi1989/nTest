@@ -67,20 +67,37 @@ class nRules:
         if not any(index):
             if Debug:
                 print ("Not found for " +  call_or_put +  " option chain of " + self.stock.get_symbol_name())
-            return None
+                print (df.head())
+            maxId = df['Volume'].idxmax()
+            index = [False] * df.shape[0]
+            index[maxId] = True
+            if Debug:
+                print (index)
+                print (df.shape)
+            #return None
         
         # gather potential Strike, 'Last Price', 'Volume'
         ret_df = df.loc[index, ['Strike', 'Last Price', 'Volume']]
 
-        ret_df['Symbol'] = [self.stock.get_symbol_name()] * ret_df.shape[0]
+        if Debug:
+            print (ret_df)
+            print (ret_df.ndim)
+            print (ret_df.shape)
+
+        if ret_df.ndim == 2:
+            length = ret_df.shape[0]
+        else:
+            length = 1
+
+        ret_df['Symbol'] = [self.stock.get_symbol_name()] * length
 
         ret_df['Volume_Ratio'] = df['Volume'] / base_volume
 
-        ret_df['Type'] = [call_or_put] * ret_df.shape[0]
+        ret_df['Type'] = [call_or_put] * length
 
         ret_df['Margin'] = (df['Strike'] - self.stock_price) / self.stock_price if call_or_put == 'call' else (self.stock_price - df['Strike']) / self.stock_price
 
-        ret_df['Option_Expiration_Date'] = [self.stock.get_next_expiration_date()] * ret_df.shape[0]
+        ret_df['Option_Expiration_Date'] = [self.stock.get_next_expiration_date()] * length
 
         return ret_df
 
@@ -96,6 +113,10 @@ class nRules:
 
         ret_df = pd.concat([call_ret, put_ret], ignore_index=True)
 
+        if Debug:
+            print (call_ret)
+            print (put_ret)
+            print (ret_df.head())
         ret_df['Prob'] = ret_df['Last Price'] * ret_df['Volume'] / np.sum(ret_df['Last Price'] * ret_df['Volume'])
 
         return ret_df
