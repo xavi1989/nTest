@@ -13,6 +13,9 @@ class nStock:
         self.time = {}
         bk = Yahoo_backend(self.symbol)
         self.current_price = bk.get_stock_price()
+        self.previous_close_price = bk.get_previous_close_price()
+        self.liv_percentage = bk.get_stock_live_percentage()
+
         expiration_dates = bk.get_expiration_dates()
         if len(expiration_dates):
             self.next_expiration_date = expiration_dates[0]
@@ -28,6 +31,9 @@ class nStock:
 
     def get_stock_price(self):
         return self.current_price
+
+    def get_stock_live_percentage(self):
+        return self.liv_percentage
 
     def get_next_expiration_date(self):
         return self.next_expiration_date

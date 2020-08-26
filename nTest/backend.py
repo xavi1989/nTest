@@ -1,26 +1,51 @@
 # import stock_info module from yahoo_fin
-from yahoo_fin.stock_info import get_data, get_live_price, tickers_sp500
+from yahoo_fin.stock_info import get_data, get_live_price, tickers_sp500, get_quote_table
 from yahoo_fin import options
+
+from retry.api import retry_call
 
 #instruction from here:
 # http://theautomatic.net/yahoo_fin-documentation/#installation
 # http://theautomatic.net/2018/07/31/how-to-get-live-stock-prices-with-python/
 # http://theautomatic.net/2019/04/17/how-to-get-options-data-with-python/
+# http://theautomatic.net/2020/05/05/how-to-download-fundamentals-data-with-python/
+
+Debug = 0
+
+retries = -1
 
 class Yahoo_backend:
     def __init__(self, Symbol = None):
         self.symbol = Symbol
+        # set to 0.01 to avoid divided by 0 error
+        self.live_price = 0.01
+        self.previous_close_price = 0.01
 
     def get_stock_price(self):
         try:
-            price = get_live_price(self.symbol)
-            return price
+            self.live_price = retry_call(get_live_price, fargs=[self.symbol], tries = retries)
         except:
-            return 0
-        
+            self.live_price = 0
+        return self.live_price
+    
+    def get_previous_close_price(self):
+        try:
+            table = retry_call(get_quote_table, fargs=[self.symbol, True], tries = retries)
+            if Debug:
+                print (table)
+            self.previous_close_price = table['Previous Close']
+        except:
+            print ("exception happens in get_previous_close_price")
+            self.previous_close_price = 0.01
+
+        return self.previous_close_price
+
+    def get_stock_live_percentage(self):
+        return (self.live_price - self.previous_close_price) / self.previous_close_price
+
     def get_expiration_dates(self):
         try:
-            return options.get_expiration_dates(self.symbol)
+            return retry_call(options.get_expiration_dates, fargs=[self.symbol], tries = retries)
         except:
             print ("Backend error")
             return None
@@ -30,7 +55,7 @@ class Yahoo_backend:
             return None
 
         try:
-            return options.get_calls(self.symbol, Date)
+            return retry_call(options.get_calls, fargs=[self.symbol, Date], tries = retries)
         except:
             return None
 
@@ -39,7 +64,7 @@ class Yahoo_backend:
             return None
 
         try:
-            return options.get_puts(self.symbol, Date)
+            return retry_call(options.get_puts, fargs=[self.symbol, Date], tries = retries)
         except:
             return None
 
@@ -51,12 +76,14 @@ class Yahoo_backend:
             return None
 
 if __name__ == '__main__':
-    Symbols = ['AAPL', 'GOOG', 'NVDA', 'AMD']
+    Symbols = ['AAPL','NVDA', 'AMD']
 
     for sym in Symbols:
         # test price
         bk = Yahoo_backend(sym)
         price = bk.get_stock_price()
+        previous_price = bk.get_previous_close_price()
+        percentage = bk.get_stock_live_percentage()
         dates = bk.get_expiration_dates()
 
         if len(dates):
@@ -66,6 +93,8 @@ if __name__ == '__main__':
         
         print("<<<<<<<<<<<<<<<Summary: " + sym)
         print("Stock price = " + str(price))
+        print("previous price = " + str(previous_price))
+        print("percentage = " + str(percentage))
         print("Option dates:")
         print (dates)
         if len(dates):

@@ -95,9 +95,13 @@ class nRules:
 
         ret_df['Type'] = [call_or_put] * length
 
-        ret_df['Margin'] = (df['Strike'] - self.stock_price) / self.stock_price if call_or_put == 'call' else (self.stock_price - df['Strike']) / self.stock_price
+        ret_df['Margin'] = (df['Strike'] + df['Last Price'] - self.stock_price) / self.stock_price if call_or_put == 'call' else (self.stock_price - df['Strike'] - df['Last Price']) / self.stock_price
 
         ret_df['Option_Expiration_Date'] = [self.stock.get_next_expiration_date()] * length
+
+        ret_df['Current Price'] = [self.stock.get_stock_price()] * length
+
+        ret_df['Percentage'] = [self.stock.get_stock_live_percentage()] * length
 
         return ret_df
 
@@ -123,7 +127,7 @@ class nRules:
         
 
 if __name__ == '__main__':
-    Symbol = 'NVDA'
+    Symbol = 'TSLA'
 
     stock = nStock(Symbol)
     rules = nRules(stock)
